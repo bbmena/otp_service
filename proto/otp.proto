@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package otp;
+
+service Password {
+  rpc request_password (OtpRequest) returns (OtpResponse) {}
+}
+
+message OtpRequest {
+  int32 timoutSeconds = 1;
+}
+
+message OtpResponse {
+  string password = 1;
+}
+
+service Validator {
+  rpc validate_password (OtpValidationRequest) returns (OtpValidationResponse) {}
+}
+
+message OtpValidationRequest {
+  string password = 1;
+}
+
+message OtpValidationResponse {
+  bool isValid = 1;
+}
