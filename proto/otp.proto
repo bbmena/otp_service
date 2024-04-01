@@ -7,7 +7,7 @@ service Password {
 }
 
 message OtpRequest {
-  int32 timoutSeconds = 1;
+  uint64 timoutSeconds = 1;
 }
 
 message OtpResponse {

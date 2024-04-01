@@ -1,4 +1,4 @@
-use aws_sdk_dynamodb::types::AttributeValue;
+use aws_sdk_dynamodb::types::{AttributeValue, KeyType};
 use aws_sdk_dynamodb::Client;
 use otp_service::{password_server::Password, OtpRequest, OtpResponse};
 use std::collections::HashMap;
@@ -15,7 +15,7 @@ pub mod validator_service {
 }
 
 const TABLE_NAME: &str = "otp_passwords";
-#[derive(Default)]
+
 pub struct PasswordService {
     pub(crate) client: Client,
 }
@@ -26,13 +26,13 @@ impl PasswordService {
             .client
             .put_item()
             .table_name(TABLE_NAME)
-            .item("password", AttributeValue::S(password_item.password))
+            .item("Password", AttributeValue::S(password_item.password))
             .item(
-                "expiration_timestamp",
+                "Expiration",
                 AttributeValue::N(password_item.expiration_timestamp.to_string()),
             );
 
-        request.send().await?;
+        request.clone().send().await.expect("Poop");
     }
 }
 
@@ -60,7 +60,6 @@ impl Password for PasswordService {
     }
 }
 
-#[derive(Default)]
 pub struct ValidatorService {
     pub(crate) client: Client,
 }
@@ -81,10 +80,11 @@ impl Validator for ValidatorService {
             .client
             .query()
             .table_name(TABLE_NAME)
-            .key_condition_expression("#expiration > :timestamp and #password = :password")
+            .key_condition_expression("#Password = :password")
+            .filter_expression("#Expiration > :timestamp")
             .set_expression_attribute_names(Some(HashMap::from([
-                ("#expiration".to_string(), "current_timestamp".to_string()),
-                ("#password".to_string(), "password".to_string()),
+                ("#Expiration".to_string(), "Expiration".to_string()),
+                ("#Password".to_string(), "Password".to_string()),
             ])))
             .set_expression_attribute_values(Some(HashMap::from([
                 (
@@ -94,11 +94,11 @@ impl Validator for ValidatorService {
                 (":password".to_string(), AttributeValue::S(password)),
             ])))
             .send()
-            .await?;
+            .await.unwrap();
 
-        let is_valid = match result.items {
+        let is_valid = match result.items.as_ref() {
             None => false,
-            Some(_) => true,
+            Some(n) => n.len() > 0,
         };
 
         Ok(Response::new(OtpValidationResponse { is_valid }))
@@ -106,7 +106,7 @@ impl Validator for ValidatorService {
 }
 
 fn generate_password() -> String {
-    "123456".to_string()
+    "1234567".to_string()
 }
 
 pub struct PasswordItem {
