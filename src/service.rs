@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 use tonic::{Request, Response, Status};
 use validator_service::{validator_server::Validator, OtpValidationRequest, OtpValidationResponse};
+use rand::{Rng, thread_rng};
 
 pub mod otp_service {
     tonic::include_proto!("otp");
@@ -118,8 +119,14 @@ impl Validator for ValidatorService {
     }
 }
 
+// this is not a secure algorithm. will need to implement https://www.ietf.org/rfc/rfc4226.txt and https://www.ietf.org/rfc/rfc6238.txt
 fn generate_password() -> String {
-    "1234567".to_string()
+    let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() / 30;
+    let mut rng = thread_rng();
+    let random_number: u32 = rng.gen_range(0..1000000);
+    let otp = (now as u32 ^ random_number) % 1000000;
+
+    otp.to_string()
 }
 
 pub struct PasswordItem {
