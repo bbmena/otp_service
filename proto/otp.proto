@@ -7,7 +7,8 @@ service Password {
 }
 
 message OtpRequest {
-  uint64 timoutSeconds = 1;
+  string username = 1;
+  uint64 timoutSeconds = 2;
 }
 
 message OtpResponse {
@@ -19,7 +20,8 @@ service Validator {
 }
 
 message OtpValidationRequest {
-  string password = 1;
+  string username = 1;
+  string password = 2;
 }
 
 message OtpValidationResponse {

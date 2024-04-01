@@ -1,4 +1,4 @@
-use aws_sdk_dynamodb::types::{AttributeValue, KeyType};
+use aws_sdk_dynamodb::types::AttributeValue;
 use aws_sdk_dynamodb::Client;
 use otp_service::{password_server::Password, OtpRequest, OtpResponse};
 use std::collections::HashMap;
@@ -27,6 +27,7 @@ impl PasswordService {
             .put_item()
             .table_name(TABLE_NAME)
             .item("Password", AttributeValue::S(password_item.password))
+            .item("Username", AttributeValue::S(password_item.username))
             .item(
                 "Expiration",
                 AttributeValue::N(password_item.expiration_timestamp.to_string()),
@@ -42,15 +43,18 @@ impl Password for PasswordService {
         &self,
         request: Request<OtpRequest>,
     ) -> Result<Response<OtpResponse>, Status> {
+        let otp_request = request.into_inner();
         let password = generate_password();
+
         let expiration_timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .expect("SystemTime before UNIX Epoch")
             .as_secs()
-            + request.into_inner().timout_seconds;
+            + otp_request.timout_seconds;
 
-        &self
+        let _ = &self
             .persist_password(PasswordItem {
+                username: otp_request.username,
                 password: password.clone(),
                 expiration_timestamp,
             })
@@ -74,16 +78,17 @@ impl Validator for ValidatorService {
             .duration_since(SystemTime::UNIX_EPOCH)
             .expect("SystemTime before UNIX Epoch")
             .as_secs();
-        let password = request.into_inner().password;
+        let otp_request = request.into_inner();
 
         let result = &self
             .client
             .query()
             .table_name(TABLE_NAME)
-            .key_condition_expression("#Password = :password")
+            .key_condition_expression("#Password = :password and #Username = :username")
             .filter_expression("#Expiration > :timestamp")
             .set_expression_attribute_names(Some(HashMap::from([
                 ("#Expiration".to_string(), "Expiration".to_string()),
+                ("#Username".to_string(), "Username".to_string()),
                 ("#Password".to_string(), "Password".to_string()),
             ])))
             .set_expression_attribute_values(Some(HashMap::from([
@@ -91,10 +96,18 @@ impl Validator for ValidatorService {
                     ":timestamp".to_string(),
                     AttributeValue::N(current_timestamp.to_string()),
                 ),
-                (":password".to_string(), AttributeValue::S(password)),
+                (
+                    ":username".to_string(),
+                    AttributeValue::S(otp_request.username),
+                ),
+                (
+                    ":password".to_string(),
+                    AttributeValue::S(otp_request.password),
+                ),
             ])))
             .send()
-            .await.unwrap();
+            .await
+            .unwrap();
 
         let is_valid = match result.items.as_ref() {
             None => false,
@@ -110,6 +123,7 @@ fn generate_password() -> String {
 }
 
 pub struct PasswordItem {
+    pub username: String,
     pub password: String,
     pub expiration_timestamp: u64,
 }
