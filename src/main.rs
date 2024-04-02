@@ -2,8 +2,8 @@ mod service;
 
 use aws_sdk_dynamodb::config::Credentials;
 use aws_sdk_dynamodb::Client;
-use service::otp_service::password_server::PasswordServer;
-use service::validator_service::validator_server::ValidatorServer;
+use service::otp::password_server::PasswordServer;
+use service::otp::validator_server::ValidatorServer;
 use service::PasswordService;
 use service::ValidatorService;
 use tonic::transport::Server;
