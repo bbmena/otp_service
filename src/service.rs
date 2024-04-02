@@ -34,7 +34,7 @@ impl PasswordService {
                 AttributeValue::N(password_item.expiration_timestamp.to_string()),
             );
 
-        request.clone().send().await.expect("Poop");
+        request.clone().send().await.expect("Something broke");
     }
 }
 
