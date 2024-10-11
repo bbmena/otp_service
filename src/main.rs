@@ -10,6 +10,7 @@ use tonic::transport::Server;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // test comment
     // let config = aws_config::load_from_env().await;
     let config = aws_config::from_env()
         .endpoint_url("http://localhost:4566")
