@@ -13,6 +13,8 @@ use tonic::transport::Server;
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let config = aws_config::load_from_env().await;
+
+    //test comment
     let config = aws_config::from_env().endpoint_url("http://localhost:4566").credentials_provider(Credentials::new("foo", "bar", None, None, "")) .load().await;
     let address = "[::1]:8080".parse().unwrap();
     let password_service = PasswordService {
