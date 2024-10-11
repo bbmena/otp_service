@@ -1,11 +1,9 @@
 mod service;
 
-use std::env;
-
 use aws_sdk_dynamodb::config::Credentials;
 use aws_sdk_dynamodb::Client;
-use service::otp_service::password_server::PasswordServer;
-use service::validator_service::validator_server::ValidatorServer;
+use service::otp::password_server::PasswordServer;
+use service::otp::validator_server::ValidatorServer;
 use service::PasswordService;
 use service::ValidatorService;
 use tonic::transport::Server;
@@ -13,9 +11,11 @@ use tonic::transport::Server;
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let config = aws_config::load_from_env().await;
-
-    //test comment
-    let config = aws_config::from_env().endpoint_url("http://localhost:4566").credentials_provider(Credentials::new("foo", "bar", None, None, "")) .load().await;
+    let config = aws_config::from_env()
+        .endpoint_url("http://localhost:4566")
+        .credentials_provider(Credentials::new("foo", "bar", None, None, ""))
+        .load()
+        .await;
     let address = "[::1]:8080".parse().unwrap();
     let password_service = PasswordService {
         client: Client::new(&config),
